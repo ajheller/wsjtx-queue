@@ -105,6 +105,39 @@ In WSJT-X, open `Settings -> Reporting`.
   port `2237`, use WSJT-X's secondary UDP forwarding or put this tool on a
   forwarded/multicast feed.
 
+## UDP Hub
+
+`wsjtx_udp_hub.py` is a small companion router for running multiple WSJT-X UDP
+tools at once. It forwards packets from WSJT-X to named clients. Clients marked
+`readonly` can only receive packets. Clients marked `control` can also send
+control packets back to WSJT-X through the hub.
+
+Example topology:
+
+```text
+WSJT-X -> 127.0.0.1:2237 wsjtx_udp_hub.py
+hub    -> 127.0.0.1:2238 GridTracker
+hub    -> 127.0.0.1:2240 wsjtx_queue.py
+```
+
+Run the hub:
+
+```sh
+python3 wsjtx_udp_hub.py \
+  --listen 127.0.0.1:2237 \
+  --client gridtracker=127.0.0.1:2238:readonly \
+  --client queue=127.0.0.1:2240:control
+```
+
+Run the queue against the hub:
+
+```sh
+python3 wsjtx_queue.py --call AK6IM --port 2240 --control
+```
+
+Configure WSJT-X UDP to send to `127.0.0.1:2237`. Configure GridTracker to
+listen on `127.0.0.1:2238`. The queue listens on `127.0.0.1:2240`.
+
 ## Profiles
 
 Press these keys while the UI is running:

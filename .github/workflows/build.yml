@@ -24,7 +24,10 @@ jobs:
           python-version: "3.12"
       - run: python -m pip install -r requirements-build.txt
       - run: pyinstaller --onefile --name wsjtx-queue wsjtx_queue.py
+      - run: pyinstaller --onefile --name wsjtx-udp-hub wsjtx_udp_hub.py
       - uses: actions/upload-artifact@v4
         with:
           name: wsjtx-queue-windows
-          path: dist/wsjtx-queue.exe
+          path: |
+            dist/wsjtx-queue.exe
+            dist/wsjtx-udp-hub.exe

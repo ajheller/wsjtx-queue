@@ -12,8 +12,8 @@ dependencies = []
 
 [project.scripts]
 wsjtx-queue = "wsjtx_queue:main"
+wsjtx-udp-hub = "wsjtx_udp_hub:main"
 
 [tool.ruff]
 line-length = 120
 target-version = "py310"
-
