@@ -128,6 +128,10 @@ tools at once. It forwards packets from WSJT-X to named clients. Clients marked
 `readonly` can only receive packets. Clients marked `control` can also send
 control packets back to WSJT-X through the hub.
 
+For normal club setups, keep `wsjtx_queue.py` listen-only and leave GridTracker
+as the control-capable app. Most of the queue tool's useful behavior is passive,
+and this avoids surprising operators who already rely on GridTracker control.
+
 Example topology:
 
 ```text
@@ -141,18 +145,23 @@ Run the hub:
 ```sh
 python3 wsjtx_udp_hub.py \
   --listen 127.0.0.1:2237 \
-  --client gridtracker=127.0.0.1:2238:readonly \
-  --client queue=127.0.0.1:2240:control
+  --client gridtracker=127.0.0.1:2238:control \
+  --client queue=127.0.0.1:2240:readonly
 ```
 
 Run the queue against the hub:
 
 ```sh
-python3 wsjtx_queue.py --call AK6IM --port 2240 --control
+python3 wsjtx_queue.py --call AK6IM --port 2240
 ```
 
-Configure WSJT-X UDP to send to `127.0.0.1:2237`. Configure GridTracker to
-listen on `127.0.0.1:2238`. The queue listens on `127.0.0.1:2240`.
+Configure WSJT-X UDP to send to `127.0.0.1:2237`. Configure GridTracker to use
+`127.0.0.1:2238`. The queue listens on `127.0.0.1:2240`.
+
+If you intentionally want the queue tool to set WSJT-X fields with `T` or
+`Enter`, start the queue with `--control` and mark the queue client as
+`control` in the hub. In that setup, make other clients `readonly` unless you
+really want more than one app sending commands to WSJT-X.
 
 For protocol details, see [WSJT-X UDP Protocol Notes](docs/wsjtx-udp-protocol.md).
 

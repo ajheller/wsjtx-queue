@@ -22,17 +22,17 @@ class FakeSocket:
 
 class UdpHubTests(unittest.TestCase):
     def test_parse_client_arg(self):
-        client = hub.parse_client_arg("queue=127.0.0.1:2240:control")
+        client = hub.parse_client_arg("queue=127.0.0.1:2240:readonly")
 
         self.assertEqual("queue", client.name)
         self.assertEqual(("127.0.0.1", 2240), client.endpoint.address)
-        self.assertEqual("control", client.mode)
+        self.assertEqual("readonly", client.mode)
 
     def test_wsjtx_packet_forwards_to_all_clients_and_learns_sender(self):
         sock = FakeSocket()
         clients = [
-            hub.parse_client_arg("gridtracker=127.0.0.1:2238:readonly"),
-            hub.parse_client_arg("queue=127.0.0.1:2240:control"),
+            hub.parse_client_arg("gridtracker=127.0.0.1:2238:control"),
+            hub.parse_client_arg("queue=127.0.0.1:2240:readonly"),
         ]
         stats = hub.HubStats()
 
@@ -53,13 +53,13 @@ class UdpHubTests(unittest.TestCase):
 
     def test_control_client_forwards_to_last_wsjtx(self):
         sock = FakeSocket()
-        clients = [hub.parse_client_arg("queue=127.0.0.1:2240:control")]
+        clients = [hub.parse_client_arg("gridtracker=127.0.0.1:2238:control")]
         stats = hub.HubStats(last_wsjtx=("127.0.0.1", 55123))
 
         hub.route_datagram(
             sock,
             b"configure",
-            ("127.0.0.1", 2240),
+            ("127.0.0.1", 2238),
             clients,
             hub.client_by_address(clients),
             stats,
@@ -70,13 +70,13 @@ class UdpHubTests(unittest.TestCase):
 
     def test_readonly_client_control_is_dropped(self):
         sock = FakeSocket()
-        clients = [hub.parse_client_arg("gridtracker=127.0.0.1:2238:readonly")]
+        clients = [hub.parse_client_arg("queue=127.0.0.1:2240:readonly")]
         stats = hub.HubStats(last_wsjtx=("127.0.0.1", 55123))
 
         hub.route_datagram(
             sock,
             b"configure",
-            ("127.0.0.1", 2238),
+            ("127.0.0.1", 2240),
             clients,
             hub.client_by_address(clients),
             stats,
