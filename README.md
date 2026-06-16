@@ -47,6 +47,18 @@ GitHub Actions builds standalone Windows, macOS, and Linux artifacts for
 `wsjtx_queue.py` and `wsjtx_udp_hub.py` on each push, pull request, and manual
 workflow run.
 
+To download the standalone builds from GitHub, open the repository's
+`Actions` tab, choose the latest successful `build` workflow run, and download
+the artifact for your platform from the `Artifacts` section:
+
+- `wsjtx-queue-windows`: contains `wsjtx-queue.exe` and `wsjtx-udp-hub.exe`.
+- `wsjtx-queue-macos`: contains `wsjtx-queue` and `wsjtx-udp-hub`.
+- `wsjtx-queue-linux`: contains `wsjtx-queue` and `wsjtx-udp-hub`.
+
+Each artifact also includes `README.md`, `LICENSE`, and `docs/`. If you build
+locally with PyInstaller instead of GitHub Actions, the standalone files are
+written under `dist/`.
+
 Deploy the current queue and UDP hub scripts to the sBitx test host:
 
 ```sh
