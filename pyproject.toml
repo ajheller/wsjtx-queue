@@ -15,5 +15,9 @@ wsjtx-queue = "wsjtx_queue:main"
 wsjtx-udp-hub = "wsjtx_udp_hub:main"
 
 [tool.ruff]
-line-length = 120
+line-length = 88
 target-version = "py310"
+
+[tool.black]
+target-version = ["py310"]
+line-length = 88

@@ -3,7 +3,6 @@ import pathlib
 import sys
 import unittest
 
-
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 SPEC = importlib.util.spec_from_file_location("wsjtx_queue", ROOT / "wsjtx_queue.py")
 wsjtx_queue = importlib.util.module_from_spec(SPEC)
@@ -16,7 +15,9 @@ class QueueCoreTests(unittest.TestCase):
         return wsjtx_queue.Decode("WSJT-X", True, 0, snr, 0.2, audio_hz, "FT8", message)
 
     def state(self, profile="log-or-73"):
-        return wsjtx_queue.QueueState("AK6IM", "CM87um", 180, 300, 2600, 10, 80, 120, profile, 600)
+        return wsjtx_queue.QueueState(
+            "AK6IM", "CM87um", 180, 300, 2600, 10, 80, 120, profile, 600
+        )
 
     def test_digit_first_callsign_is_queued(self):
         state = self.state()
@@ -82,7 +83,9 @@ class QueueCoreTests(unittest.TestCase):
         self.assertEqual(2240, reader.u32())
 
     def test_configure_dx_packet_sets_dx_and_generates_messages(self):
-        station = wsjtx_queue.CqStation("7M2VAP", 0, 0, -17, 0.2, 1200, "CQ POTA 7M2VAP QM05", "QM05")
+        station = wsjtx_queue.CqStation(
+            "7M2VAP", 0, 0, -17, 0.2, 1200, "CQ POTA 7M2VAP QM05", "QM05"
+        )
         packet = wsjtx_queue.configure_dx_packet("WSJT-X", station)
         reader = wsjtx_queue.Reader(packet)
 

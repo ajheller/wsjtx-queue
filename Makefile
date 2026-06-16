@@ -1,10 +1,16 @@
 PYTHON ?= python3
 SBITX_TARGET ?= pi@sbitx.local:~
 
-.PHONY: test demo hub-demo deploy-sbitx
+.PHONY: test format format-check demo hub-demo deploy-sbitx
 
 test:
 	$(PYTHON) -m unittest discover -s tests
+
+format:
+	black wsjtx_queue.py wsjtx_udp_hub.py tests
+
+format-check:
+	black --check wsjtx_queue.py wsjtx_udp_hub.py tests
 
 demo:
 	$(PYTHON) wsjtx_queue.py --call AK6IM --demo --view both

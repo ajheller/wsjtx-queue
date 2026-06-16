@@ -18,7 +18,6 @@ import socket
 import sys
 import time
 
-
 VALID_MODES = {"readonly", "control"}
 
 
@@ -87,7 +86,9 @@ def parse_client_arg(text: str) -> Client:
     try:
         return parse_client_simple(text)
     except ValueError as exc:
-        raise argparse.ArgumentTypeError("expected NAME=HOST:PORT:readonly|control") from exc
+        raise argparse.ArgumentTypeError(
+            "expected NAME=HOST:PORT:readonly|control"
+        ) from exc
 
 
 def client_by_address(clients: list[Client]) -> dict[tuple[str, int], Client]:
@@ -137,7 +138,9 @@ def route_datagram(
 
 
 def stats_line(stats: HubStats) -> str:
-    wsjtx = "-" if not stats.last_wsjtx else f"{stats.last_wsjtx[0]}:{stats.last_wsjtx[1]}"
+    wsjtx = (
+        "-" if not stats.last_wsjtx else f"{stats.last_wsjtx[0]}:{stats.last_wsjtx[1]}"
+    )
     return (
         f"wsjtx={stats.wsjtx_packets} client={stats.client_packets} "
         f"to_clients={stats.forwarded_to_clients} to_wsjtx={stats.forwarded_to_wsjtx} "
@@ -154,7 +157,9 @@ def run(args: argparse.Namespace) -> None:
 
     print(f"Listening on {args.listen.host}:{args.listen.port}")
     for client in args.client:
-        print(f"Client {client.name}: {client.endpoint.host}:{client.endpoint.port} {client.mode}")
+        print(
+            f"Client {client.name}: {client.endpoint.host}:{client.endpoint.port} {client.mode}"
+        )
     print("Ctrl-C to stop.")
 
     while True:
@@ -170,8 +175,12 @@ def run(args: argparse.Namespace) -> None:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Route WSJT-X UDP packets to multiple tools.")
-    parser.add_argument("--listen", type=parse_endpoint, default=Endpoint("127.0.0.1", 2237))
+    parser = argparse.ArgumentParser(
+        description="Route WSJT-X UDP packets to multiple tools."
+    )
+    parser.add_argument(
+        "--listen", type=parse_endpoint, default=Endpoint("127.0.0.1", 2237)
+    )
     parser.add_argument(
         "--client",
         type=parse_client_arg,
@@ -179,7 +188,12 @@ def main() -> None:
         default=[],
         help="Client as NAME=HOST:PORT:readonly|control. May be repeated.",
     )
-    parser.add_argument("--status", type=float, default=10.0, help="Print status every N seconds; 0 disables")
+    parser.add_argument(
+        "--status",
+        type=float,
+        default=10.0,
+        help="Print status every N seconds; 0 disables",
+    )
     args = parser.parse_args()
 
     if not args.client:
