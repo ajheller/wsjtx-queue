@@ -88,6 +88,12 @@ For contest/rate operating where your local log event is enough:
 python3 wsjtx_queue.py --call AK6IM --profile arrl-digital --complete-on log-only
 ```
 
+To prioritize a chase list in the caller queue and CQ/QRZ list:
+
+```sh
+python3 wsjtx_queue.py --call AK6IM --wanted wanted.txt
+```
+
 To enable WSJT-X control hotkeys:
 
 ```sh
@@ -253,12 +259,46 @@ frequency, and asking WSJT-X to generate messages. If you have not moved the
 selection, the selected station is the top-ranked CQ/QRZ. It does not enable
 transmit.
 
+## Wanted Calls
+
+Use `--wanted FILE` to mark and boost stations you are chasing, such as special
+event stations, Museum Ships Weekend calls, W1AW portable stations, or contest
+multipliers. Wanted stations are marked with `!` and receive a score boost in
+both the caller queue and CQ/QRZ list.
+
+Example `wanted.txt`:
+
+```text
+# Museum Ships
+NJ2BB Battleship New Jersey
+K8E
+W5KID
+
+# W1AW portable
+W1AW
+
+# Match only this exact portable call
+K6C/7
+```
+
+Only the first token on each non-comment line is used, so you can keep notes
+after a callsign. Inline comments beginning with `#` are ignored.
+
+Matching rules:
+
+- `W1AW` matches `W1AW`, `W1AW/6`, and similar portable forms.
+- `K6C/7` matches `K6C/7` specifically.
+
+The default boost is `--wanted-boost 1000`, which is intentionally large enough
+to float wanted stations to the top in normal use.
+
 ## Worked Tracking
 
 Logged QSOs are added to a session worked list. Queue and CQ rows marked with
-`*` are calls already worked this session. The `worked` view shows worked calls,
-duplicate log count, and age since last log. Pressing `c` clears active queue/CQ
-state but leaves worked history intact.
+`*` are calls already worked this session. Rows marked with `!` are wanted
+calls. The `worked` view shows worked calls, duplicate log count, and age since
+last log. Pressing `c` clears active queue/CQ state but leaves worked history
+intact.
 
 ## TX Frequency Suggestion
 

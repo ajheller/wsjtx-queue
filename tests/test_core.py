@@ -2,6 +2,7 @@ import argparse
 import importlib.util
 import pathlib
 import sys
+import tempfile
 import unittest
 from unittest import mock
 
@@ -77,6 +78,34 @@ class QueueCoreTests(unittest.TestCase):
 
         ranked = [cq.call for _, cq in state.ranked_cqs("arrl-digital")]
         self.assertEqual("7M2VAP", ranked[0])
+
+    def test_load_wanted_calls_uses_first_token_and_comments(self):
+        with tempfile.NamedTemporaryFile("w", encoding="utf-8") as handle:
+            handle.write("# Museum Ships\n")
+            handle.write("NJ2BB Battleship New Jersey\n")
+            handle.write("W1AW/6 # portable\n")
+            handle.flush()
+
+            self.assertEqual({"NJ2BB", "W1AW/6"}, wsjtx_queue.load_wanted_calls(handle.name))
+
+    def test_wanted_calls_mark_base_and_exact_portable_matches(self):
+        state = self.state()
+        state.wanted_calls = {"W1AW", "K6C/7"}
+
+        self.assertTrue(state.is_wanted("W1AW/6"))
+        self.assertTrue(state.is_wanted("K6C/7"))
+        self.assertFalse(state.is_wanted("K6C/6"))
+
+    def test_wanted_cqs_are_boosted_to_top(self):
+        state = self.state()
+        state.wanted_calls = {"K7ZZZ"}
+        state.wanted_boost = 1000
+        state.add_decode(self.decode("CQ K7ZZZ CN87", snr=-25, audio_hz=900))
+        state.add_decode(self.decode("CQ POTA 7M2VAP QM05", snr=20, audio_hz=1200))
+
+        ranked = [cq.call for _, cq in state.ranked_cqs("field-day")]
+
+        self.assertEqual("K7ZZZ", ranked[0])
 
     def test_parse_port_list(self):
         self.assertEqual(2237, wsjtx_queue.parse_udp_port("2237"))

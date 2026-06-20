@@ -359,6 +359,20 @@ def is_completion_decode(decode: Decode) -> bool:
     return any(token in {"73", "RR73"} for token in tokens[2:])
 
 
+def load_wanted_calls(path: str) -> set[str]:
+    wanted = set()
+    with open(path, encoding="utf-8") as handle:
+        for line_number, line in enumerate(handle, start=1):
+            line = line.split("#", 1)[0].strip()
+            if not line:
+                continue
+            call = line.split()[0].upper()
+            if not CALL_RE.match(call):
+                raise ValueError(f"{path}:{line_number}: invalid callsign {call!r}")
+            wanted.add(call)
+    return wanted
+
+
 def maidenhead_center(grid: str) -> tuple[float, float] | None:
     grid = grid.strip().upper()
     if not GRID_RE.match(grid):
@@ -433,6 +447,8 @@ class QueueState:
         tx_window: int,
         complete_on: str,
         completed_suppress: int,
+        wanted_calls: set[str] | None = None,
+        wanted_boost: float = 0.0,
     ) -> None:
         self.my_call = my_call.upper()
         self.my_grid = my_grid.upper()
@@ -444,6 +460,8 @@ class QueueState:
         self.tx_window = tx_window
         self.complete_on = complete_on
         self.completed_suppress = completed_suppress
+        self.wanted_calls = wanted_calls or set()
+        self.wanted_boost = wanted_boost
         self.callers: dict[str, Caller] = {}
         self.cqs: dict[str, CqStation] = {}
         self.selected_cq_call = ""
@@ -617,6 +635,12 @@ class QueueState:
         keys = {call.upper(), base_call(call)}
         return any(worked.call in keys or base_call(worked.call) in keys for worked in self.worked.values())
 
+    def is_wanted(self, call: str) -> bool:
+        if not self.wanted_calls:
+            return False
+        keys = {call.upper(), base_call(call)}
+        return any(key in self.wanted_calls for key in keys)
+
     def suggested_tx(self) -> tuple[int | None, int | None, int]:
         self.prune_recent_decodes()
         if self.tx_max_hz < self.tx_min_hz:
@@ -678,7 +702,9 @@ class QueueState:
         self.clear_stale()
         now = time.time()
         scorer = SCORERS[profile]
-        rows = [(scorer(c, now), c) for c in self.callers.values()]
+        rows = [
+            (scorer(c, now) + (self.wanted_boost if self.is_wanted(c.call) else 0), c) for c in self.callers.values()
+        ]
         rows.sort(key=lambda item: item[0], reverse=True)
         return rows
 
@@ -686,7 +712,7 @@ class QueueState:
         self.clear_stale()
         now = time.time()
         scorer = SCORERS[profile]
-        rows = [(scorer(c, now), c) for c in self.cqs.values()]
+        rows = [(scorer(c, now) + (self.wanted_boost if self.is_wanted(c.call) else 0), c) for c in self.cqs.values()]
         rows.sort(key=lambda item: item[0], reverse=True)
         return rows
 
@@ -782,13 +808,14 @@ def render_station_row(
     station: Caller | CqStation,
     now: float,
     worked: bool = False,
+    wanted: bool = False,
     attr: int = curses.A_NORMAL,
 ) -> None:
     age = now - station.last_seen
     dist = "-" if station.distance_km is None else f"{station.distance_km:.0f}"
-    mark = "*" if worked else " "
+    marks = f"{'!' if wanted else ' '}{'*' if worked else ' '}"
     line = (
-        f"{idx:>2}{mark} {score:>7.1f} {station.call:<12} {station.grid or '-':<6} {dist:>6} "
+        f"{idx:>2}{marks} {score:>7.1f} {station.call:<12} {station.grid or '-':<6} {dist:>6} "
         f"{station.snr:>4} {station.dt_seconds:>5.1f} {station.audio_hz:>5} "
         f"{station.heard_count:>5} {age:>5.0f}  {station.message}"
     )
@@ -830,7 +857,7 @@ def render(
         1,
         0,
         "Keys: 1 SES  2 ARRL Digital  3 Field Day  v view  Up/Down select CQ  "
-        "Enter set DX  T set Rx DF  c clear  q quit  * worked",
+        "Enter set DX  T set Rx DF  c clear  q quit  ! wanted  * worked",
         width - 1,
         curses.A_DIM,
     )
@@ -882,6 +909,7 @@ def render(
                 caller,
                 now,
                 state.is_worked(caller.call),
+                state.is_wanted(caller.call),
                 attr,
             )
             y += 1
@@ -896,7 +924,9 @@ def render(
             if y >= height - 2:
                 break
             attr = curses.A_REVERSE | curses.A_BOLD if idx - 1 == selected_cq_index else curses.A_NORMAL
-            render_station_row(stdscr, y, width, idx, score, cq, now, state.is_worked(cq.call), attr)
+            render_station_row(
+                stdscr, y, width, idx, score, cq, now, state.is_worked(cq.call), state.is_wanted(cq.call), attr
+            )
             y += 1
 
     if view == "worked" and y < height - 2:
@@ -996,6 +1026,8 @@ def run_curses(stdscr: curses.window, args: argparse.Namespace) -> None:
         args.tx_window,
         args.complete_on,
         args.completed_suppress,
+        args.wanted_calls,
+        args.wanted_boost,
     )
     state.set_control_enabled(args.control)
     ports = [args.port] if args.port is not None else args.ports
@@ -1089,6 +1121,8 @@ def run_demo(args: argparse.Namespace) -> None:
         args.tx_window,
         args.complete_on,
         args.completed_suppress,
+        args.wanted_calls,
+        args.wanted_boost,
     )
     for decode in demo_packets(args.call):
         state.add_decode(decode)
@@ -1141,6 +1175,8 @@ def main() -> None:
         default=600,
         help="Seconds to suppress re-adding calls after they complete",
     )
+    parser.add_argument("--wanted", help="File of wanted callsigns to mark and boost in rankings")
+    parser.add_argument("--wanted-boost", type=float, default=1000.0, help="Score boost for calls in --wanted")
     parser.add_argument("--max-age", type=int, default=180, help="Drop callers after this many seconds")
     parser.add_argument("--tx-min", type=int, default=300, help="Lowest TX audio frequency to suggest")
     parser.add_argument(
@@ -1166,6 +1202,12 @@ def main() -> None:
     parser.add_argument("--refresh", type=float, default=0.25, help="UI refresh interval")
     parser.add_argument("--demo", action="store_true", help="Print demo rankings and exit")
     args = parser.parse_args()
+    try:
+        args.wanted_calls = load_wanted_calls(args.wanted) if args.wanted else set()
+    except OSError as exc:
+        parser.error(f"could not read --wanted file: {exc}")
+    except ValueError as exc:
+        parser.error(str(exc))
 
     if args.demo:
         run_demo(args)
