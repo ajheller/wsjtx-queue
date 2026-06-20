@@ -53,7 +53,7 @@ workflow run. Version tags such as `v0.1.0` also publish a GitHub Release with
 ready-to-download archives.
 
 For normal installs, open the repository's
-[latest release](https://github.com/ajheller/wjstx-queue/releases/latest) and
+[latest release](https://github.com/ajheller/wsjtx-queue/releases/latest) and
 download the archive for your platform:
 
 - `wsjtx-queue-vX.Y.Z-windows.zip`: contains `wsjtx-queue.exe` and
