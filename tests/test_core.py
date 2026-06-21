@@ -136,6 +136,22 @@ class QueueCoreTests(unittest.TestCase):
 
         self.assertEqual("K7ZZZ", ranked[0])
 
+    def test_pota_profile_boosts_cq_pota_for_hunters(self):
+        state = self.state()
+        state.add_decode(self.decode("CQ K7ZZZ CN87", snr=20, audio_hz=900))
+        state.add_decode(self.decode("CQ POTA N6POTA DM04", snr=-15, audio_hz=1200))
+
+        ranked = [cq.call for _, cq in state.ranked_cqs("pota")]
+
+        self.assertEqual("N6POTA", ranked[0])
+
+    def test_pota_profile_is_accepted_by_parser(self):
+        parser = wsjtx_queue.build_parser({"call": "AK6IM", "grid": "CM87um"})
+        args = parser.parse_args(["--profile", "pota"])
+        wsjtx_queue.validate_args(parser, args)
+
+        self.assertEqual("pota", args.profile)
+
     def test_parse_port_list(self):
         self.assertEqual(2237, wsjtx_queue.parse_udp_port("2237"))
         self.assertEqual([2237, 2238], wsjtx_queue.parse_port_list("2237, 2238"))

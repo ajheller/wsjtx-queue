@@ -315,6 +315,8 @@ Press these keys while the UI is running:
   depend on distance.
 - `3`: `field-day` - favors quick/easy contacts: stronger SNR, reasonable
   audio frequency, and low time offset.
+- `4`: `pota` - favors fresh, workable callers with a modest distance boost.
+  In CQ/QRZ view, `CQ POTA` stations are boosted for hunters.
 - `v`: cycle between caller queue, CQ/QRZ list, both lists, and worked list.
 - `Up` / `Down`: select a CQ/QRZ row. Selection follows the callsign when rows
   re-rank.
@@ -354,6 +356,23 @@ CQ/QRZ station by setting DX call/grid, moving Rx DF to that station's audio
 frequency, and asking WSJT-X to generate messages. If you have not moved the
 selection, the selected station is the top-ranked CQ/QRZ. It does not enable
 transmit.
+
+## POTA
+
+For POTA activations, use the caller queue:
+
+```sh
+python3 wsjtx_queue.py --call AK6IM --grid CM87um --profile pota
+```
+
+For POTA hunting, start in the CQ/QRZ list:
+
+```sh
+python3 wsjtx_queue.py --call AK6IM --grid CM87um --profile pota --view cqs
+```
+
+The `pota` profile boosts `CQ POTA` rows in CQ/QRZ view while still favoring
+fresh, workable callers in the normal queue.
 
 ## Wanted Calls
 

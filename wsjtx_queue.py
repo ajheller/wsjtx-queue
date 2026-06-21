@@ -433,10 +433,32 @@ def score_field_day(c: Caller, now: float) -> float:
     return snr_bonus + easy_audio_bonus - dt_penalty - min(age, 120) / 5
 
 
+def pota_message_bonus(message: str) -> float:
+    tokens = message.split()
+    return 35.0 if len(tokens) >= 2 and tokens[0] == "CQ" and "POTA" in tokens[1:] else 0.0
+
+
+def score_pota(c: Caller, now: float) -> float:
+    age = now - c.last_seen
+    dist = c.distance_km or 0
+    snr_bonus = max(min(c.snr, 20), -30) / 1.5
+    easy_audio_bonus = 4 if 300 <= c.audio_hz <= 2600 else -8
+    return (
+        c.heard_count * 18
+        + snr_bonus
+        + dist / 500
+        + easy_audio_bonus
+        + pota_message_bonus(c.message)
+        - min(age, 180) / 4
+        - abs(c.dt_seconds) * 10
+    )
+
+
 SCORERS: dict[str, Callable[[Caller, float], float]] = {
     "ses": score_ses,
     "arrl-digital": score_arrl_digital,
     "field-day": score_field_day,
+    "pota": score_pota,
 }
 
 
@@ -980,7 +1002,7 @@ def render(
     stdscr.addnstr(
         1,
         0,
-        "Keys: 1 SES  2 ARRL Digital  3 Field Day  v view  Up/Down select CQ  "
+        "Keys: 1 SES  2 ARRL Digital  3 Field Day  4 POTA  v view  Up/Down select CQ  "
         "Enter set DX  T set Rx DF  c clear  q quit  ! wanted  * worked",
         width - 1,
         curses.A_DIM,
@@ -1181,6 +1203,8 @@ def handle_key(
         profile = "arrl-digital"
     elif key == ord("3"):
         profile = "field-day"
+    elif key == ord("4"):
+        profile = "pota"
     elif key in (ord("v"), ord("V")):
         view = next_view(view)
     elif key == curses.KEY_UP and view in {"cqs", "both"}:
