@@ -62,6 +62,7 @@ jobs:
           New-Item -ItemType Directory -Path package
           Copy-Item ${{ matrix.queue_path }} package/
           Copy-Item ${{ matrix.hub_path }} package/
+          Copy-Item "launchers/Start WSJT-X Queue.bat" package/
           Copy-Item README.md package/
           Copy-Item LICENSE package/
           Copy-Item docs package/docs -Recurse
@@ -72,6 +73,11 @@ jobs:
           mkdir package
           cp "${{ matrix.queue_path }}" package/
           cp "${{ matrix.hub_path }}" package/
+          if [ "${{ matrix.platform }}" = "macos" ]; then
+            cp "launchers/Start WSJT-X Queue.command" package/
+          else
+            cp launchers/start-wsjtx-queue.sh package/
+          fi
           cp README.md LICENSE package/
           cp -R docs package/docs
           tar -czf wsjtx-queue-${{ github.ref_name }}-${{ matrix.platform }}.tar.gz -C package .
@@ -85,6 +91,7 @@ jobs:
             README.md
             LICENSE
             docs/
+            launchers/
 
   release:
     name: release
@@ -107,4 +114,4 @@ jobs:
             artifacts/wsjtx-queue-${{ github.ref_name }}-macos.tar.gz \
             artifacts/wsjtx-queue-${{ github.ref_name }}-linux.tar.gz \
             --title "wsjtx-queue ${{ github.ref_name }}" \
-            --notes "Standalone builds for Windows, macOS, and Linux. Each archive includes wsjtx-queue, wsjtx-udp-hub, README.md, LICENSE, and docs/."
+            --notes "Standalone builds for Windows, macOS, and Linux. Each archive includes wsjtx-queue, wsjtx-udp-hub, README.md, LICENSE, docs/, and a simple launcher."

@@ -88,7 +88,34 @@ download the archive for your platform:
 - `wsjtx-queue-vX.Y.Z-linux.tar.gz`: contains `wsjtx-queue` and
   `wsjtx-udp-hub`.
 
-Each release archive also includes `README.md`, `LICENSE`, and `docs/`.
+Each release archive also includes `README.md`, `LICENSE`, `docs/`, and a
+simple launcher for that platform.
+
+### Desktop Shortcuts
+
+After first-run setup with `--save-config`, non-CLI users can start the queue
+from the launcher included in the release archive.
+
+On Windows:
+
+1. Extract `wsjtx-queue-vX.Y.Z-windows.zip`.
+2. Double-click `Start WSJT-X Queue.bat`.
+3. To put it on the desktop, right-click `Start WSJT-X Queue.bat`, choose
+   `Send to -> Desktop (create shortcut)`, and rename the shortcut if desired.
+
+On macOS:
+
+1. Extract `wsjtx-queue-vX.Y.Z-macos.tar.gz`.
+2. Follow the first-run quarantine step below if macOS blocks the app.
+3. Double-click `Start WSJT-X Queue.command`.
+4. To put it somewhere convenient, make an alias for `Start WSJT-X Queue.command`
+   and move the alias to the desktop.
+
+On Linux:
+
+1. Extract `wsjtx-queue-vX.Y.Z-linux.tar.gz`.
+2. Run `./start-wsjtx-queue.sh` from a terminal, or use your desktop
+   environment's shortcut creator to launch that script.
 
 ### macOS First Run
 
