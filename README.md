@@ -72,6 +72,29 @@ Demo mode, with no radio needed:
 wsjtx-queue --call AK6IM --grid CM87um --demo
 ```
 
+### Experimental Textual UI
+
+The `feature/textual-ui` branch includes an experimental color UI built with
+Textual. It is a prototype, not the default club-member setup.
+
+From a source checkout:
+
+```sh
+python3 -m pip install -r requirements-textual.txt
+python3 wsjtx_queue_textual.py --call AK6IM --grid CM87um --demo
+```
+
+For live UDP testing:
+
+```sh
+python3 wsjtx_queue_textual.py --call AK6IM --grid CM87um --profile ses
+```
+
+The Textual version uses the same ranking, completion, TX suggestion, config,
+and UDP control code as the regular terminal UI. The point of the branch is to
+evaluate whether color, richer table styling, and a footer key bar make the
+operator workflow clearer enough to justify the extra dependency.
+
 GitHub Actions builds standalone Windows, macOS, and Linux artifacts for
 `wsjtx_queue.py` and `wsjtx_udp_hub.py` on each push, pull request, and manual
 workflow run. Version tags such as `v0.1.0` also publish a GitHub Release with
