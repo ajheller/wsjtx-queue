@@ -101,6 +101,16 @@ Fields:
 `wsjtx_queue.py` currently uses the `Id` so it can send control packets to the
 right WSJT-X instance.
 
+### Status, Type 1, Out
+
+Status includes dial frequency, mode, DX call/grid, report, transmit state,
+decode state, Rx DF, Tx DF, station call/grid, special activity mode, frequency
+tolerance, T/R period, configuration name, and current Tx message.
+
+`wsjtx_queue.py` parses the current DX call/grid plus Rx DF and Tx DF. TX
+frequency suggestions prefer the current WSJT-X DX call and Rx DF when present,
+so changing the DX station in WSJT-X or GridTracker updates the target bias.
+
 ### Decode, Type 2, Out
 
 Fields:
@@ -215,16 +225,6 @@ button.
 Configure does not include a direct `Tx DF` field.
 
 ## Useful Messages Not Yet Used Here
-
-### Status, Type 1, Out
-
-Status includes dial frequency, mode, DX call/grid, report, transmit state,
-decode state, Rx DF, Tx DF, station call/grid, special activity mode, frequency
-tolerance, T/R period, configuration name, and current Tx message.
-
-This is the packet to parse if the queue tool later needs to display current
-band/mode, detect transmit state, observe Tx DF, or automatically discover the
-operator callsign and grid.
 
 ### Reply, Type 4, In
 

@@ -428,10 +428,13 @@ the last `120` seconds. The footer shows the top suggestion. The `tx` view shows
 a ranked list of candidate audio frequencies, including local clearance, edge
 spacing, and any target-frequency bias.
 
-When a CQ/QRZ station is selected, or when there is a top-ranked caller, the
-candidate list mildly favors clear holes near that station's decoded audio
-frequency. This is only a local heuristic; it does not know what the DX station's
-receiver passband or local QRM looks like.
+When WSJT-X reports a current `DX Call` and `Rx DF` in its Status UDP packet,
+the candidate list mildly favors clear holes near that station's audio
+frequency. This means changing the DX station in WSJT-X or GridTracker updates
+the TX target bias. If WSJT-X has no current DX station, the target falls back
+to the selected CQ/QRZ station or top-ranked caller. This is only a local
+heuristic; it does not know what the DX station's receiver passband or local QRM
+looks like.
 
 Useful options:
 

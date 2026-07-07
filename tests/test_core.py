@@ -53,6 +53,28 @@ def encode_decode_for_test(decode):
     )
 
 
+def encode_status_for_test(client_id="WSJT-X", dx_call="K7ZZZ", dx_grid="CN87", rx_df=1500, tx_df=1500):
+    return b"".join(
+        [
+            struct.pack(">III", wsjtx_queue.MAGIC, wsjtx_queue.SCHEMA, wsjtx_queue.TYPE_STATUS),
+            wsjtx_queue.qutf8(client_id),
+            struct.pack(">Q", 14074000),
+            wsjtx_queue.qutf8("FT8"),
+            wsjtx_queue.qutf8(dx_call),
+            wsjtx_queue.qutf8("-10"),
+            wsjtx_queue.qutf8("FT8"),
+            wsjtx_queue.qbool(False),
+            wsjtx_queue.qbool(False),
+            wsjtx_queue.qbool(True),
+            wsjtx_queue.qu32(rx_df),
+            wsjtx_queue.qu32(tx_df),
+            wsjtx_queue.qutf8("AK6IM"),
+            wsjtx_queue.qutf8("CM87"),
+            wsjtx_queue.qutf8(dx_grid),
+        ]
+    )
+
+
 class QueueCoreTests(unittest.TestCase):
     def decode(self, message, snr=-10, audio_hz=1000):
         return wsjtx_queue.Decode("WSJT-X", True, 0, snr, 0.2, audio_hz, "FT8", message)
@@ -217,6 +239,29 @@ class QueueCoreTests(unittest.TestCase):
 
         self.assertGreaterEqual(candidates[0].clearance, state.tx_guard_hz)
         self.assertNotIn(1500, [candidate.hz for candidate in candidates])
+
+    def test_status_packet_sets_tx_bias_target(self):
+        state = self.state()
+        state.add_decode(self.decode("CQ DX K7ZZZ CN87", audio_hz=900))
+        packet = encode_status_for_test(dx_call="N6ABC", dx_grid="DM04", rx_df=1600, tx_df=1700)
+
+        wsjtx_queue.process_udp_packet(state, packet, ("127.0.0.1", 45185))
+
+        self.assertEqual("WSJT-X", state.client_id)
+        self.assertEqual("N6ABC", state.status_dx_call)
+        self.assertEqual("DM04", state.status_dx_grid)
+        self.assertEqual(1600, state.status_rx_df)
+        self.assertEqual(1700, state.status_tx_df)
+        self.assertEqual(("N6ABC", 1600), wsjtx_queue.tx_bias_target(state, "ses"))
+
+    def test_status_without_dx_falls_back_to_selected_station(self):
+        state = self.state()
+        state.add_decode(self.decode("CQ DX K7ZZZ CN87", audio_hz=900))
+        packet = encode_status_for_test(dx_call="", dx_grid="", rx_df=wsjtx_queue.MAX_U32, tx_df=wsjtx_queue.MAX_U32)
+
+        wsjtx_queue.process_udp_packet(state, packet, ("127.0.0.1", 45185))
+
+        self.assertEqual(("K7ZZZ", 900), wsjtx_queue.tx_bias_target(state, "ses"))
 
     def test_tx_candidates_without_decodes_use_mid_passband(self):
         state = self.state()
