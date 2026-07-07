@@ -202,11 +202,14 @@ class QueueTextualApp(App):
         self.render_table(now)
 
     def tx_summary(self) -> str:
-        selected = self.selected_station_for_view()
-        if selected is None:
-            target_call, target_hz = core.tx_bias_target(self.state, self.profile)
+        if self.state.status_dx_call and self.state.status_rx_df is not None:
+            target_call, target_hz = self.state.status_dx_call, self.state.status_rx_df
         else:
-            target_call, target_hz = selected.call, selected.audio_hz
+            selected = self.selected_station_for_view()
+            if selected is None:
+                target_call, target_hz = core.tx_bias_target(self.state, self.profile)
+            else:
+                target_call, target_hz = selected.call, selected.audio_hz
         candidates = self.state.tx_candidates(target_hz, target_call, limit=1)
         if not candidates:
             return "[b yellow]TX suggestion:[/b yellow] unavailable"
