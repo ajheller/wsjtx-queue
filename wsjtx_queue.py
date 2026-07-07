@@ -30,6 +30,7 @@ MAGIC = 0xADBCCBDA
 SCHEMA = 3
 MAX_U32 = 0xFFFFFFFF
 TYPE_HEARTBEAT = 0
+TYPE_STATUS = 1
 TYPE_DECODE = 2
 TYPE_CLEAR = 3
 TYPE_QSO_LOGGED = 5
@@ -48,6 +49,7 @@ def parse_activation_tags(value: str) -> frozenset[str]:
 
 PACKET_NAMES = {
     TYPE_HEARTBEAT: "heartbeat",
+    TYPE_STATUS: "status",
     TYPE_DECODE: "decode",
     TYPE_CLEAR: "clear",
     TYPE_QSO_LOGGED: "qso-logged",
@@ -82,6 +84,9 @@ class Reader:
     def u32(self) -> int:
         return struct.unpack(">I", self._take(4))[0]
 
+    def u64(self) -> int:
+        return struct.unpack(">Q", self._take(8))[0]
+
     def i32(self) -> int:
         return struct.unpack(">i", self._take(4))[0]
 
@@ -114,6 +119,15 @@ def qu32(value: int) -> bytes:
 @dataclasses.dataclass(frozen=True)
 class ClientMessage:
     client_id: str
+
+
+@dataclasses.dataclass(frozen=True)
+class Status:
+    client_id: str
+    dx_call: str
+    dx_grid: str
+    rx_df: int
+    tx_df: int
 
 
 @dataclasses.dataclass(frozen=True)
@@ -218,6 +232,23 @@ def parse_packet(data: bytes) -> tuple[int, object | None]:
 
     if msg_type == TYPE_CLEAR:
         return msg_type, ClientMessage(r.utf8()) if r.pos < len(data) else None
+
+    if msg_type == TYPE_STATUS:
+        client_id = r.utf8()
+        r.u64()  # Dial frequency.
+        r.utf8()  # Mode.
+        dx_call = r.utf8().upper()
+        r.utf8()  # Report.
+        r.utf8()  # Tx mode.
+        r.bool()  # Tx enabled.
+        r.bool()  # Transmitting.
+        r.bool()  # Decoding.
+        rx_df = r.u32()
+        tx_df = r.u32()
+        r.utf8()  # Station call.
+        r.utf8()  # Station grid.
+        dx_grid = r.utf8().upper()
+        return msg_type, Status(client_id, dx_call, dx_grid, rx_df, tx_df)
 
     if msg_type == TYPE_LOGGED_ADIF:
         client_id = r.utf8()
@@ -539,6 +570,11 @@ class QueueState:
         self.last_packet_detail = "waiting for WSJT-X UDP"
         self.client_id = ""
         self.last_peer: tuple[str, int] | None = None
+        self.status_dx_call = ""
+        self.status_dx_grid = ""
+        self.status_rx_df: int | None = None
+        self.status_tx_df: int | None = None
+        self.status_updated = 0.0
         self.control_message = "control disabled"
         self.control_message_until = 0.0
         self.control_baseline = "control disabled"
@@ -559,8 +595,24 @@ class QueueState:
         self.last_peer = peer
         if isinstance(payload, Decode):
             self.client_id = payload.client_id
+        elif isinstance(payload, Status):
+            self.client_id = payload.client_id
         elif isinstance(payload, ClientMessage):
             self.client_id = payload.client_id
+
+    def note_status(self, status: Status) -> None:
+        self.status_dx_call = status.dx_call
+        self.status_dx_grid = status.dx_grid
+        self.status_rx_df = status.rx_df if 0 < status.rx_df < MAX_U32 else None
+        self.status_tx_df = status.tx_df if 0 < status.tx_df < MAX_U32 else None
+        self.status_updated = time.time()
+        if self.status_dx_call and self.status_rx_df is not None:
+            grid = f" {self.status_dx_grid}" if self.status_dx_grid else ""
+            self.last_packet_detail = f"DX {self.status_dx_call}{grid} Rx {self.status_rx_df} Hz"
+        elif self.status_dx_call:
+            self.last_packet_detail = f"DX {self.status_dx_call}"
+        else:
+            self.last_packet_detail = "status no DX"
 
     def set_control_enabled(self, enabled: bool) -> None:
         self.control_baseline = "control enabled" if enabled else "control disabled"
@@ -1109,6 +1161,9 @@ def render_table_header(stdscr: curses.window, y: int, width: int, label: str) -
 
 
 def tx_bias_target(state: QueueState, profile: str) -> tuple[str, int | None]:
+    if state.status_dx_call and state.status_rx_df is not None:
+        return state.status_dx_call, state.status_rx_df
+
     cq = state.selected_cq(profile)
     if cq:
         return cq.call, cq.audio_hz
@@ -1381,7 +1436,9 @@ def process_udp_packet(state: QueueState, data: bytes, peer: tuple[str, int]) ->
         msg_type, payload = parse_packet(data)
         state.note_client(payload, peer)
         state.note_packet(msg_type)
-        if msg_type == TYPE_DECODE and isinstance(payload, Decode):
+        if msg_type == TYPE_STATUS and isinstance(payload, Status):
+            state.note_status(payload)
+        elif msg_type == TYPE_DECODE and isinstance(payload, Decode):
             state.add_decode(payload)
         elif msg_type in (TYPE_LOGGED_ADIF, TYPE_QSO_LOGGED) and isinstance(payload, LoggedCall):
             state.remove_logged_call(payload.call)
