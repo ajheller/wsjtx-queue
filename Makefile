@@ -1,5 +1,7 @@
 PYTHON ?= python3
-SBITX_TARGET ?= pi@sbitx.local:~
+SBITX_HOST ?= pi@sbitx.local
+SBITX_DIR ?= ~/wsjtx-queue
+SBITX_TARGET ?= $(SBITX_HOST):$(SBITX_DIR)
 TEXTUAL_VENV ?= .venv-textual
 TEXTUAL_PYTHON := $(TEXTUAL_VENV)/bin/python
 TEXTUAL_ENV := PYTHONPATH=
@@ -37,4 +39,5 @@ hub-demo:
 		--client queue=127.0.0.1:2240:readonly
 
 deploy-sbitx:
-	scp -r Makefile wsjtx_queue.py wsjtx_udp_hub.py wsjtx_queue_textual.py requirements-textual.txt wanted $(SBITX_TARGET)
+	ssh $(SBITX_HOST) "mkdir -p $(SBITX_DIR)"
+	scp -r Makefile wsjtx_queue.py wsjtx_udp_hub.py wsjtx_queue_textual.py requirements-textual.txt wanted $(SBITX_TARGET)/
