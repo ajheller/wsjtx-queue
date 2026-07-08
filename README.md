@@ -72,6 +72,32 @@ Demo mode, with no radio needed:
 wsjtx-queue --call AK6IM --grid CM87um --demo
 ```
 
+### Deploy to sBitx
+
+For quick testing on an sBitx, the Makefile can copy the current source checkout
+to a dedicated project directory on the Pi:
+
+```sh
+make deploy-sbitx
+```
+
+By default this deploys to `pi@sbitx.local:~/wsjtx-queue/`. It intentionally
+does not copy files directly into the Pi home directory, so it will not overwrite
+an unrelated `~/Makefile`.
+
+To use a different host or directory:
+
+```sh
+make deploy-sbitx SBITX_HOST=pi@192.168.1.42 SBITX_DIR=~/wsjtx-queue
+```
+
+Then on the sBitx:
+
+```sh
+cd ~/wsjtx-queue
+python3 wsjtx_queue.py --call AK6IM --grid CM87um --profile ses
+```
+
 GitHub Actions builds standalone Windows, macOS, and Linux artifacts for
 `wsjtx_queue.py` and `wsjtx_udp_hub.py` on each push, pull request, and manual
 workflow run. Version tags such as `v0.1.0` also publish a GitHub Release with

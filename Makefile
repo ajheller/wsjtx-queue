@@ -1,5 +1,7 @@
 PYTHON ?= python3
-SBITX_TARGET ?= pi@sbitx.local:~
+SBITX_HOST ?= pi@sbitx.local
+SBITX_DIR ?= ~/wsjtx-queue
+SBITX_TARGET ?= $(SBITX_HOST):$(SBITX_DIR)
 
 .PHONY: test format format-check demo hub-demo deploy-sbitx
 
@@ -22,4 +24,5 @@ hub-demo:
 		--client queue=127.0.0.1:2240:readonly
 
 deploy-sbitx:
-	scp -r wsjtx_queue.py wsjtx_udp_hub.py wanted $(SBITX_TARGET)
+	ssh $(SBITX_HOST) "mkdir -p $(SBITX_DIR)"
+	scp -r wsjtx_queue.py wsjtx_udp_hub.py wanted $(SBITX_TARGET)/
