@@ -5,9 +5,9 @@ __pycache__/
 .mypy_cache/
 .ruff_cache/
 .venv/
+.venv-textual/
 venv/
 build/
 dist/
 *.spec
 .DS_Store
-
