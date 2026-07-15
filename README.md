@@ -38,10 +38,12 @@ The examples below use the standalone release command names.
 
 Command names by platform:
 
-- Windows PowerShell: `.\wsjtx-queue.exe` and `.\wsjtx-udp-hub.exe`
-- macOS/Linux, from the extracted release folder: `./wsjtx-queue` and
-  `./wsjtx-udp-hub`
-- Source checkout: `python3 wsjtx_queue.py` and `python3 wsjtx_udp_hub.py`
+- Windows PowerShell: `.\wsjtx-queue.exe`, `.\wsjtx-udp-hub.exe`,
+  `.\wsjtx-udp-record.exe`, and `.\wsjtx-udp-replay.exe`
+- macOS/Linux, from the extracted release folder: `./wsjtx-queue`,
+  `./wsjtx-udp-hub`, `./wsjtx-udp-record`, and `./wsjtx-udp-replay`
+- Source checkout: `python3 wsjtx_queue.py`, `python3 wsjtx_udp_hub.py`,
+  `python3 wsjtx_udp_record.py`, and `python3 wsjtx_udp_replay.py`
 
 First run: save your normal callsign and grid square. Your grid matters for
 distance-aware profiles such as `arrl-digital` and `pota`.
@@ -130,24 +132,24 @@ cd ~/wsjtx-queue
 python3 wsjtx_queue.py --call AK6IM --grid CM87um --profile ses
 ```
 
-GitHub Actions builds standalone Windows, macOS, and Linux artifacts for
-`wsjtx_queue.py` and `wsjtx_udp_hub.py` on each push, pull request, and manual
-workflow run. Version tags such as `v0.1.0` also publish a GitHub Release with
-ready-to-download archives.
+GitHub Actions builds standalone Windows, macOS, and Linux artifacts for the
+queue, UDP hub, UDP recorder, and UDP replay tools on each push, pull request,
+and manual workflow run. Version tags such as `v0.1.0` also publish a GitHub
+Release with ready-to-download archives.
 
 For normal installs, open the repository's
 [latest release](https://github.com/ajheller/wsjtx-queue/releases/latest) and
 download the archive for your platform:
 
-- `wsjtx-queue-vX.Y.Z-windows.zip`: contains `wsjtx-queue.exe` and
-  `wsjtx-udp-hub.exe`.
-- `wsjtx-queue-vX.Y.Z-macos.tar.gz`: contains `wsjtx-queue` and
-  `wsjtx-udp-hub`.
-- `wsjtx-queue-vX.Y.Z-linux.tar.gz`: contains `wsjtx-queue` and
-  `wsjtx-udp-hub`.
+- `wsjtx-queue-vX.Y.Z-windows.zip`: contains `wsjtx-queue.exe`,
+  `wsjtx-udp-hub.exe`, `wsjtx-udp-record.exe`, and `wsjtx-udp-replay.exe`.
+- `wsjtx-queue-vX.Y.Z-macos.tar.gz`: contains `wsjtx-queue`,
+  `wsjtx-udp-hub`, `wsjtx-udp-record`, and `wsjtx-udp-replay`.
+- `wsjtx-queue-vX.Y.Z-linux.tar.gz`: contains `wsjtx-queue`,
+  `wsjtx-udp-hub`, `wsjtx-udp-record`, and `wsjtx-udp-replay`.
 
-Each release archive also includes `README.md`, `LICENSE`, `docs/`, `wanted/`,
-and a simple launcher for that platform.
+Each release archive also includes `README.md`, `LICENSE`, `docs/`,
+`sample-data/`, `wanted/`, and a simple launcher for that platform.
 
 ### Desktop Shortcuts
 
@@ -320,6 +322,51 @@ If you want a different fallback list, use `--ports`:
 
 ```sh
 wsjtx-queue --call AK6IM --grid CM87um --ports 2237,2238,2240
+```
+
+## UDP Recording And Replay
+
+For debugging, demos, and repeatable tests, you can record WSJT-X UDP packets
+and replay them later.
+
+Record a raw UDP stream:
+
+```sh
+wsjtx-udp-record --listen 127.0.0.1:2245 --output session.wsjtxudp.jsonl
+```
+
+Point WSJT-X, GridTracker forwarding, or `wsjtx-udp-hub` at the recorder's
+listen port. The file is JSON Lines with one base64-encoded UDP packet per line,
+so it is easy to trim to the interesting few minutes.
+
+Replay a raw recording into a queue instance:
+
+```sh
+wsjtx-udp-replay session.wsjtxudp.jsonl --dest 127.0.0.1:2237
+```
+
+Replay faster than real time:
+
+```sh
+wsjtx-udp-replay session.wsjtxudp.jsonl --dest 127.0.0.1:2237 --speed 10
+```
+
+You can also synthesize Decode packets from a WSJT-X `ALL.TXT` excerpt:
+
+```sh
+wsjtx-udp-replay --alltxt ALL.TXT.excerpt --dest 127.0.0.1:2237
+```
+
+This is useful when you have copied a few decode lines from WSJT-X but did not
+record the live UDP stream. It is not a complete session replay: `ALL.TXT`
+contains decodes, but not Status, QSO Logged, Clear, Heartbeat, or control
+packets. For pileup/CQ ranking and TX-frequency hole testing, though, an
+`ALL.TXT` excerpt is often enough.
+
+Try the included sample without sending UDP:
+
+```sh
+wsjtx-udp-replay --alltxt sample-data/alltxt-excerpt.txt --dry-run
 ```
 
 ## Quick Start With GridTracker Forwarding

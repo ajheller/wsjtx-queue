@@ -19,6 +19,8 @@ textual = [
 wsjtx-queue = "wsjtx_queue:main"
 wsjtx-queue-textual = "wsjtx_queue_textual:main"
 wsjtx-udp-hub = "wsjtx_udp_hub:main"
+wsjtx-udp-record = "wsjtx_udp_record:main"
+wsjtx-udp-replay = "wsjtx_udp_replay:main"
 
 [tool.ruff]
 line-length = 120

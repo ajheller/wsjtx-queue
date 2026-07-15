@@ -24,7 +24,7 @@ jobs:
         with:
           python-version: "3.12"
       - run: python -m pip install black
-      - run: black --check wsjtx_queue.py wsjtx_udp_hub.py tests
+      - run: black --check wsjtx_queue.py wsjtx_udp_hub.py wsjtx_queue_textual.py wsjtx_udp_record.py wsjtx_udp_replay.py tests
       - run: python -m unittest discover -s tests
 
   standalone:
@@ -39,14 +39,20 @@ jobs:
             os: windows-latest
             queue_path: dist/wsjtx-queue.exe
             hub_path: dist/wsjtx-udp-hub.exe
+            record_path: dist/wsjtx-udp-record.exe
+            replay_path: dist/wsjtx-udp-replay.exe
           - platform: macos
             os: macos-latest
             queue_path: dist/wsjtx-queue
             hub_path: dist/wsjtx-udp-hub
+            record_path: dist/wsjtx-udp-record
+            replay_path: dist/wsjtx-udp-replay
           - platform: linux
             os: ubuntu-latest
             queue_path: dist/wsjtx-queue
             hub_path: dist/wsjtx-udp-hub
+            record_path: dist/wsjtx-udp-record
+            replay_path: dist/wsjtx-udp-replay
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -55,6 +61,8 @@ jobs:
       - run: python -m pip install -r requirements-build.txt
       - run: python -m PyInstaller --onefile --name wsjtx-queue wsjtx_queue.py
       - run: python -m PyInstaller --onefile --name wsjtx-udp-hub wsjtx_udp_hub.py
+      - run: python -m PyInstaller --onefile --name wsjtx-udp-record wsjtx_udp_record.py
+      - run: python -m PyInstaller --onefile --name wsjtx-udp-replay wsjtx_udp_replay.py
       - name: Package Windows release asset
         if: startsWith(github.ref, 'refs/tags/v') && matrix.platform == 'windows'
         shell: pwsh
@@ -62,10 +70,13 @@ jobs:
           New-Item -ItemType Directory -Path package
           Copy-Item ${{ matrix.queue_path }} package/
           Copy-Item ${{ matrix.hub_path }} package/
+          Copy-Item ${{ matrix.record_path }} package/
+          Copy-Item ${{ matrix.replay_path }} package/
           Copy-Item "launchers/Start WSJT-X Queue.bat" package/
           Copy-Item README.md package/
           Copy-Item LICENSE package/
           Copy-Item docs package/docs -Recurse
+          Copy-Item sample-data package/sample-data -Recurse
           Copy-Item wanted package/wanted -Recurse
           Compress-Archive -Path package/* -DestinationPath wsjtx-queue-${{ github.ref_name }}-${{ matrix.platform }}.zip
       - name: Package Unix release asset
@@ -74,6 +85,8 @@ jobs:
           mkdir package
           cp "${{ matrix.queue_path }}" package/
           cp "${{ matrix.hub_path }}" package/
+          cp "${{ matrix.record_path }}" package/
+          cp "${{ matrix.replay_path }}" package/
           if [ "${{ matrix.platform }}" = "macos" ]; then
             cp "launchers/Start WSJT-X Queue.command" package/
           else
@@ -81,6 +94,7 @@ jobs:
           fi
           cp README.md LICENSE package/
           cp -R docs package/docs
+          cp -R sample-data package/sample-data
           cp -R wanted package/wanted
           tar -czf wsjtx-queue-${{ github.ref_name }}-${{ matrix.platform }}.tar.gz -C package .
       - uses: actions/upload-artifact@v4
@@ -89,10 +103,13 @@ jobs:
           path: |
             ${{ matrix.queue_path }}
             ${{ matrix.hub_path }}
+            ${{ matrix.record_path }}
+            ${{ matrix.replay_path }}
             wsjtx-queue-${{ github.ref_name }}-${{ matrix.platform }}.*
             README.md
             LICENSE
             docs/
+            sample-data/
             wanted/
             launchers/
 
@@ -117,4 +134,4 @@ jobs:
             artifacts/wsjtx-queue-${{ github.ref_name }}-macos.tar.gz \
             artifacts/wsjtx-queue-${{ github.ref_name }}-linux.tar.gz \
             --title "wsjtx-queue ${{ github.ref_name }}" \
-            --notes "Standalone builds for Windows, macOS, and Linux. Each archive includes wsjtx-queue, wsjtx-udp-hub, README.md, LICENSE, docs/, wanted/, and a simple launcher."
+            --notes "Standalone builds for Windows, macOS, and Linux. Each archive includes wsjtx-queue, wsjtx-udp-hub, wsjtx-udp-record, wsjtx-udp-replay, README.md, LICENSE, docs/, sample-data/, wanted/, and a simple launcher."
