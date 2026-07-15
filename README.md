@@ -72,6 +72,38 @@ Demo mode, with no radio needed:
 wsjtx-queue --call AK6IM --grid CM87um --demo
 ```
 
+### Textual UI
+
+The source checkout includes a color UI built with Textual. The standalone
+release command still starts the regular terminal UI; run the Textual entry
+point from source when you want the richer table styling and footer key bar.
+
+From a source checkout:
+
+```sh
+make textual-venv
+.venv-textual/bin/python wsjtx_queue_textual.py --call AK6IM --grid CM87um --demo
+```
+
+For live UDP testing:
+
+```sh
+.venv-textual/bin/python wsjtx_queue_textual.py --call AK6IM --grid CM87um --profile ses
+```
+
+On Raspberry Pi OS, run the app with `.venv-textual/bin/python` rather than
+plain `python3`. If Textual reports a `platformdirs` import error, rerun
+`make textual-venv` to refresh the venv packages. The Make targets clear
+`PYTHONPATH` so system packages from the sBitx software environment do not
+override the venv.
+
+The Textual version uses the same ranking, completion, TX suggestion, config,
+and UDP control code as the regular terminal UI.
+
+In Textual `both` view, callers and CQ/QRZ stations are shown as one mixed
+selectable list. `Up` and `Down` move through the visible rows, and `Enter`
+uses the highlighted row when `--control` is enabled.
+
 ### Deploy to sBitx
 
 For quick testing on an sBitx, the Makefile can copy the current source checkout
